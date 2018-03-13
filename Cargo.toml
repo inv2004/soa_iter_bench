@@ -1,0 +1,11 @@
+[package]
+name = "soa_iter_bench"
+version = "0.1.0"
+authors = ["Your Name <>"]
+
+[dependencies]
+lazy_static = "*"
+rand = "*"
+itertools = "*"
+soa_derive = "*"
+
