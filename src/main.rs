@@ -251,6 +251,18 @@ fn test_zip(b: &mut Bencher) {
 }
 
 #[bench]
+fn test_zip_without_ref(b: &mut Bencher) {
+  let sl_old = old_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  b.iter(|| {
+    let mut acc = 0.0;
+    for (((a,b),c),d) in sl_old.a.iter().zip(sl_old.b.iter()).zip(sl_old.c.iter()).zip(sl_old.d.iter()) {
+        acc += *a as f32 + b + c + d
+    }
+    acc
+  });
+}
+
+#[bench]
 fn test_zip_rev(b: &mut Bencher) {
   let sl_old = old_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
   b.iter(|| {
