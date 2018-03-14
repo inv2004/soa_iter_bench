@@ -100,12 +100,19 @@ mod old2_slice {
 
     fn next(&mut self) -> Option<Self::Item> {
       self.a.next().and_then(|a|
-              Some(SRef{a,
-b:self.b.next().unwrap(),
-c:self.c.next().unwrap(),
-d:self.d.next().unwrap()})
+        Some(SRef{
+          a,
+          b:self.b.next().unwrap(),
+          c:self.c.next().unwrap(),
+          d:self.d.next().unwrap()
+        })
       )
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+      self.a.size_hint()
+    }
+
   }
 
   impl<'a,'b> IntoIterator for &'b SSlice<'a> {
