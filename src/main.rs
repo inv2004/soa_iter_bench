@@ -8,7 +8,7 @@ use rand::{thread_rng, Rng};
 use test::Bencher;
 use std::iter;
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub struct SRef<'a> {
     a: &'a u32,
     b: &'a f32,
@@ -42,10 +42,6 @@ mod old_slice {
 
   impl<'a> Iterator for Iter<'a> {
     type Item = SRef<'a>;
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.a.size_hint()
-    }
 
     fn next(&mut self) -> Option<Self::Item> {
         let a = self.a.next();
@@ -98,10 +94,6 @@ mod new_slice {
   impl<'a> Iterator for Iter<'a> {
     type Item = SRef<'a>;
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.0.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         if let Some((((a,b),c),d)) = self.0.next() {
             Some(SRef{a, b, c, d})
@@ -134,30 +126,43 @@ mod new2_slice {
   pub struct Iter<'a>{
       sl: &'a SSlice<'a>,
       i: usize,
-      len: usize,
+      i_rev: usize,
   }
 
   impl<'a> Iterator for Iter<'a> {
     type Item = SRef<'a>;
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len, Some(self.len))
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
-        if self.i < self.len {
-            let r = SRef{
-              a:&self.sl.a[self.i],
-              b:&self.sl.b[self.i],
-              c:&self.sl.b[self.i],
-              d:&self.sl.b[self.i],
-            };
+        if self.i < self.i_rev {
+            let i = self.i;
             self.i += 1;
-            Some(r)
+            Some(SRef{
+              a:&self.sl.a[i],
+              b:&self.sl.b[i],
+              c:&self.sl.c[i],
+              d:&self.sl.d[i],
+            })
         } else {
             None
         }
     }
+  }
+
+  impl<'a> DoubleEndedIterator for Iter<'a> {
+      fn next_back(&mut self) -> Option<Self::Item> {
+        if self.i_rev > self.i {
+            let i_rev = self.i_rev - 1;
+            self.i_rev -= 1;
+            Some(SRef{
+              a:&self.sl.a[i_rev],
+              b:&self.sl.b[i_rev],
+              c:&self.sl.c[i_rev],
+              d:&self.sl.d[i_rev],
+            })
+        } else {
+            None
+        }
+      }
   }
 
   impl<'a> IntoIterator for &'a SSlice<'a> {
@@ -166,19 +171,20 @@ mod new2_slice {
     
     fn into_iter(self) -> Self::IntoIter {
         Iter{
-            sl:&self,
-            i:0,
-            len: self.a.len(),
+            sl: &self,
+            i: 0,
+            i_rev: self.a.len(),
         }
     }
   }
+
 }
 
 lazy_static! {
     static ref VEC_A: Vec<u32> = { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
     static ref VEC_B: Vec<f32> = { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
     static ref VEC_C: Vec<f32> = { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
-    static ref VEC_D: Vec<f32> = { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
+    static ref VEC_D: Vec<f32> = { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000 ).collect() };
 }
 
 fn main() {
@@ -246,6 +252,19 @@ fn test_zip(b: &mut Bencher) {
 }
 
 #[bench]
+fn test_zip_rev(b: &mut Bencher) {
+  let sl_old = old_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  b.iter(|| {
+    let mut acc = 0.0;
+    for (((a,b),c),d) in sl_old.a.iter().zip(sl_old.b.iter()).zip(sl_old.c.iter()).zip(sl_old.d.iter()).rev() {
+        let r = SRef{a,b,c,d};
+        acc += r.calc();
+    }
+    acc
+  });
+}
+
+#[bench]
 fn test_old(b: &mut Bencher) {
   let sl_old = old_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
   b.iter(|| {
@@ -281,6 +300,24 @@ fn test_new2(b: &mut Bencher) {
   });
 }
 
+#[test]
+fn test_new2_rev_test() {
+  let sl_new2 = new2_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  let v1 = sl_new2.into_iter().collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>();
+  let v2 = sl_new2.into_iter().rev().collect::<Vec<_>>();
+  assert_eq!(v1, v2);
+}
 
+#[bench]
+fn test_new2_rev(b: &mut Bencher) {
+  let sl_new2 = new2_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  b.iter(|| {
+    let mut acc = 0.0;
+    for r in sl_new2.into_iter().rev() {
+        acc += r.calc();
+    }
+    acc
+  });
+}
 
 
