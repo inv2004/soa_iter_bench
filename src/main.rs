@@ -100,11 +100,11 @@ mod old2_slice {
 
     fn next(&mut self) -> Option<Self::Item> {
       self.a.next().and_then(|a|
-        self.b.next().and_then(|b|
-          self.c.next().and_then(|c|
-            self.d.next().and_then(|d|
-              Some(SRef{a,b,c,d})
-      ))))
+              Some(SRef{a,
+b:self.b.next().unwrap(),
+c:self.c.next().unwrap(),
+d:self.d.next().unwrap()})
+      )
     }
   }
 
