@@ -77,6 +77,52 @@ mod old_slice {
   }
 }
 
+mod old2_slice {
+  use std::slice;
+  use super::SRef;
+
+  pub struct SSlice<'a> {
+    pub a: &'a [u32],
+    pub b: &'a [f32],
+    pub c: &'a [f32],
+    pub d: &'a [f32],
+  }
+
+  pub struct Iter<'a>{
+      pub a: slice::Iter<'a, u32>,
+      pub b: slice::Iter<'a, f32>,
+      pub c: slice::Iter<'a, f32>,
+      pub d: slice::Iter<'a, f32>,
+  }
+
+  impl<'a> Iterator for Iter<'a> {
+    type Item = SRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+      self.a.next().and_then(|a|
+        self.b.next().and_then(|b|
+          self.c.next().and_then(|c|
+            self.d.next().and_then(|d|
+              Some(SRef{a,b,c,d})
+      ))))
+    }
+  }
+
+  impl<'a,'b> IntoIterator for &'b SSlice<'a> {
+    type Item = SRef<'a>;
+    type IntoIter = Iter<'a>;
+    
+    fn into_iter(self) -> Self::IntoIter {
+        Iter{
+          a:self.a.iter(),
+          b:self.b.iter(),
+          c:self.c.iter(),
+          d:self.d.iter(),
+        }
+    }
+  }
+}
+
 mod new_slice {
   use std::slice;
   use std::iter;
@@ -278,6 +324,18 @@ fn test_zip_rev(b: &mut Bencher) {
 #[bench]
 fn test_old(b: &mut Bencher) {
   let sl_old = old_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  b.iter(|| {
+    let mut acc = 0.0;
+    for r in &sl_old {
+        acc += r.calc();
+    }
+    acc
+  });
+}
+
+#[bench]
+fn test_old2(b: &mut Bencher) {
+  let sl_old = old2_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
   b.iter(|| {
     let mut acc = 0.0;
     for r in &sl_old {
