@@ -43,6 +43,10 @@ mod old_slice {
   impl<'a> Iterator for Iter<'a> {
     type Item = SRef<'a>;
 
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.a.size_hint()
+    }
+
     fn next(&mut self) -> Option<Self::Item> {
         let a = self.a.next();
         let b = self.b.next();
@@ -94,6 +98,10 @@ mod new_slice {
   impl<'a> Iterator for Iter<'a> {
     type Item = SRef<'a>;
 
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+
     fn next(&mut self) -> Option<Self::Item> {
         if let Some((((a,b),c),d)) = self.0.next() {
             Some(SRef{a, b, c, d})
@@ -131,6 +139,10 @@ mod new2_slice {
 
   impl<'a> Iterator for Iter<'a> {
     type Item = SRef<'a>;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.i < self.len {
