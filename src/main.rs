@@ -102,9 +102,9 @@ mod old2_slice {
       self.a.next().and_then(|a|
         Some(SRef{
           a,
-          b:self.b.next().unwrap(),
-          c:self.c.next().unwrap(),
-          d:self.d.next().unwrap()
+          b:&self.b.next().unwrap(),
+          c:&self.c.next().unwrap(),
+          d:&self.d.next().unwrap()
         })
       )
     }
@@ -148,11 +148,9 @@ mod new_slice {
     type Item = SRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some((((a,b),c),d)) = self.0.next() {
-            Some(SRef{a, b, c, d})
-        } else {
-            None
-        }
+      self.0.next().and_then(|(((a,b),c),d)|
+        Some(SRef{a, b, c, d})
+      )
     }
   }
 
