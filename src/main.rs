@@ -151,13 +151,12 @@ mod new2_slice {
   impl<'a> DoubleEndedIterator for Iter<'a> {
       fn next_back(&mut self) -> Option<Self::Item> {
         if self.i_rev > self.i {
-            let i_rev = self.i_rev - 1;
             self.i_rev -= 1;
             Some(SRef{
-              a:&self.sl.a[i_rev],
-              b:&self.sl.b[i_rev],
-              c:&self.sl.c[i_rev],
-              d:&self.sl.d[i_rev],
+              a:&self.sl.a[self.i_rev],
+              b:&self.sl.b[self.i_rev],
+              c:&self.sl.c[self.i_rev],
+              d:&self.sl.d[self.i_rev],
             })
         } else {
             None
