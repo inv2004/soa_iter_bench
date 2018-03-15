@@ -7,5 +7,5 @@ authors = ["Your Name <>"]
 lazy_static = "*"
 rand = "*"
 itertools = "*"
-soa_derive = { git = "https://github.com/lumol-org/soa-derive", branch="iter-opt" }
+soa_derive = { git = "https://github.com/lumol-org/soa-derive" }
 
