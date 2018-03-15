@@ -155,6 +155,14 @@ mod new_slice {
     }
   }
 
+  impl<'a> DoubleEndedIterator for Iter<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+      self.0.next_back().and_then(|(((a,b),c),d)|
+        Some(SRef{a, b, c, d})
+      )
+    }
+  }
+
   impl<'a> IntoIterator for &'a SSlice<'a> {
     type Item = SRef<'a>;
     type IntoIter = Iter<'a>;
@@ -406,5 +414,18 @@ fn test_iter_opt(b: &mut Bencher) {
     acc
   });
 }
+
+#[bench]
+fn test_new_rev(b: &mut Bencher) {
+  let sl_new = new_slice::SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  b.iter(|| {
+    let mut acc = 0.0;
+    for r in sl_new.into_iter().rev() {
+        acc += r.calc();
+    }
+    acc
+  });
+}
+
 
 
