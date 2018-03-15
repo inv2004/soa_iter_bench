@@ -1,6 +1,7 @@
 #![feature(test)]
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate itertools;
+#[macro_use] extern crate soa_derive;
 extern crate rand;
 extern crate test;
 
@@ -8,14 +9,14 @@ use rand::{thread_rng, Rng};
 use test::Bencher;
 use std::iter;
 
-#[derive(Debug,PartialEq)]
-pub struct SRef<'a> {
-    a: &'a u32,
-    b: &'a f32,
-    c: &'a f32,
-    d: &'a f32,
+#[derive(StructOfArray)]
+#[soa_derive = "Debug, PartialEq"]
+pub struct S {
+    a: u32,
+    b: f32,
+    c: f32,
+    d: f32,
 }
-
 impl<'a> SRef<'a> {
     fn calc(&self) -> f32 {
         *self.a as f32 + self.b + self.c + self.d
@@ -388,6 +389,18 @@ fn test_new2_rev(b: &mut Bencher) {
   b.iter(|| {
     let mut acc = 0.0;
     for r in sl_new2.into_iter().rev() {
+        acc += r.calc();
+    }
+    acc
+  });
+}
+
+#[bench]
+fn test_iter_opt(b: &mut Bencher) {
+  let sl_soa = SSlice{a:&VEC_A, b:&VEC_B, c:&VEC_C, d:&VEC_D};
+  b.iter(|| {
+    let mut acc = 0.0;
+    for r in &sl_soa {
         acc += r.calc();
     }
     acc
