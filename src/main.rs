@@ -1,11 +1,11 @@
 #![feature(test)]
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate itertools;
 #[macro_use]
-extern crate lazy_static;
-extern crate rand;
-#[macro_use]
 extern crate soa_derive;
+extern crate rand;
 extern crate test;
 
 use rand::{thread_rng, Rng};
@@ -28,7 +28,7 @@ impl<'a> SRef<'a> {
 
 mod old_slice {
     use std::slice;
-    use super::*;
+    use super::SRef;
 
     pub struct SSlice<'a> {
         pub a: &'a [u32],
@@ -79,29 +79,11 @@ mod old_slice {
             }
         }
     }
-
-    #[bench]
-    fn test_old(b: &mut Bencher) {
-        let sl_old = old_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        b.iter(|| {
-            let mut acc = 0.0;
-            for r in &sl_old {
-                acc += r.calc();
-            }
-            acc
-        });
-    }
-
 }
 
 mod old2_slice {
     use std::slice;
-    use super::*;
+    use super::SRef;
 
     pub struct SSlice<'a> {
         pub a: &'a [u32],
@@ -121,11 +103,13 @@ mod old2_slice {
         type Item = SRef<'a>;
 
         fn next(&mut self) -> Option<Self::Item> {
-            self.a.next().map(|a| SRef {
-                a,
-                b: &self.b.next().unwrap(),
-                c: &self.c.next().unwrap(),
-                d: &self.d.next().unwrap(),
+            self.a.next().and_then(|a| {
+                Some(SRef {
+                    a,
+                    b: &self.b.next().unwrap(),
+                    c: &self.c.next().unwrap(),
+                    d: &self.d.next().unwrap(),
+                })
             })
         }
 
@@ -147,30 +131,12 @@ mod old2_slice {
             }
         }
     }
-
-    #[bench]
-    fn test_old2(b: &mut Bencher) {
-        let sl_old = old2_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        b.iter(|| {
-            let mut acc = 0.0;
-            for r in &sl_old {
-                acc += r.calc();
-            }
-            acc
-        });
-    }
-
 }
 
 mod new_slice {
     use std::slice;
     use std::iter;
-    use super::*;
+    use super::SRef;
 
     pub struct SSlice<'a> {
         pub a: &'a [u32],
@@ -218,45 +184,10 @@ mod new_slice {
             )
         }
     }
-
-    #[bench]
-    fn test_new(b: &mut Bencher) {
-        let sl_new = new_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        b.iter(|| {
-            let mut acc = 0.0;
-            for r in &sl_new {
-                acc += r.calc();
-            }
-            acc
-        });
-    }
-
-    #[bench]
-    fn test_new_rev(b: &mut Bencher) {
-        let sl_new = new_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        println!("{}", sl_new.a.len());
-        b.iter(|| {
-            let mut acc = 0.0;
-            for r in sl_new.into_iter().rev() {
-                acc += r.calc();
-            }
-            acc
-        });
-    }
 }
 
 mod new2_slice {
-    use super::*;
+    use super::SRef;
 
     pub struct SSlice<'a> {
         pub a: &'a [u32],
@@ -319,69 +250,33 @@ mod new2_slice {
         }
     }
 
-    #[bench]
-    fn test_new2(b: &mut Bencher) {
-        let sl_new2 = new2_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        b.iter(|| {
-            let mut acc = 0.0;
-            for r in &sl_new2 {
-                acc += r.calc();
-            }
-            acc
-        });
-    }
-
-    #[test]
-    fn test_new2_rev_test() {
-        let sl_new2 = new2_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        let v1 = sl_new2
-            .into_iter()
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect::<Vec<_>>();
-        let v2 = sl_new2.into_iter().rev().collect::<Vec<_>>();
-        assert_eq!(v1, v2);
-    }
-
-    #[bench]
-    fn test_new2_rev(b: &mut Bencher) {
-        let sl_new2 = new2_slice::SSlice {
-            a: &VEC_A,
-            b: &VEC_B,
-            c: &VEC_C,
-            d: &VEC_D,
-        };
-        b.iter(|| {
-            let mut acc = 0.0;
-            for r in sl_new2.into_iter().rev() {
-                acc += r.calc();
-            }
-            acc
-        });
-    }
-
 }
 
 lazy_static! {
-    static ref VEC_A: Vec<u32> =
-      { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
-    static ref VEC_B: Vec<f32> =
-      { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
-    static ref VEC_C: Vec<f32> =
-      { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000).collect() };
-    static ref VEC_D: Vec<f32> =
-      { iter::repeat(()).map(|()| thread_rng().gen()).take(100_000 ).collect() };
+    static ref VEC_A: Vec<u32> = {
+        iter::repeat(())
+            .map(|()| thread_rng().gen())
+            .take(100_000)
+            .collect()
+    };
+    static ref VEC_B: Vec<f32> = {
+        iter::repeat(())
+            .map(|()| thread_rng().gen())
+            .take(100_000)
+            .collect()
+    };
+    static ref VEC_C: Vec<f32> = {
+        iter::repeat(())
+            .map(|()| thread_rng().gen())
+            .take(100_000)
+            .collect()
+    };
+    static ref VEC_D: Vec<f32> = {
+        iter::repeat(())
+            .map(|()| thread_rng().gen())
+            .take(100_000)
+            .collect()
+    };
 }
 
 fn main() {
@@ -534,6 +429,109 @@ fn test_zip_rev(b: &mut Bencher) {
 }
 
 #[bench]
+fn test_old(b: &mut Bencher) {
+    let sl_old = old_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    b.iter(|| {
+        let mut acc = 0.0;
+        for r in &sl_old {
+            acc += r.calc();
+        }
+        acc
+    });
+}
+
+#[bench]
+fn test_old2(b: &mut Bencher) {
+    let sl_old = old2_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    b.iter(|| {
+        let mut acc = 0.0;
+        for r in &sl_old {
+            acc += r.calc();
+        }
+        acc
+    });
+}
+
+#[bench]
+fn test_new(b: &mut Bencher) {
+    let sl_new = new_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    b.iter(|| {
+        let mut acc = 0.0;
+        for r in &sl_new {
+            acc += r.calc();
+        }
+        acc
+    });
+}
+
+#[bench]
+fn test_new2(b: &mut Bencher) {
+    let sl_new2 = new2_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    b.iter(|| {
+        let mut acc = 0.0;
+        for r in &sl_new2 {
+            acc += r.calc();
+        }
+        acc
+    });
+}
+
+#[test]
+fn test_new2_rev_test() {
+    let sl_new2 = new2_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    let v1 = sl_new2
+        .into_iter()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>();
+    let v2 = sl_new2.into_iter().rev().collect::<Vec<_>>();
+    assert_eq!(v1, v2);
+}
+
+#[bench]
+fn test_new2_rev(b: &mut Bencher) {
+    let sl_new2 = new2_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    b.iter(|| {
+        let mut acc = 0.0;
+        for r in sl_new2.into_iter().rev() {
+            acc += r.calc();
+        }
+        acc
+    });
+}
+
+#[bench]
 fn test_iter_opt(b: &mut Bencher) {
     let sl_soa = SSlice {
         a: &VEC_A,
@@ -544,6 +542,23 @@ fn test_iter_opt(b: &mut Bencher) {
     b.iter(|| {
         let mut acc = 0.0;
         for r in &sl_soa {
+            acc += r.calc();
+        }
+        acc
+    });
+}
+
+#[bench]
+fn test_new_rev(b: &mut Bencher) {
+    let sl_new = new_slice::SSlice {
+        a: &VEC_A,
+        b: &VEC_B,
+        c: &VEC_C,
+        d: &VEC_D,
+    };
+    b.iter(|| {
+        let mut acc = 0.0;
+        for r in sl_new.into_iter().rev() {
             acc += r.calc();
         }
         acc
