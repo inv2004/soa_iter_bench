@@ -65,7 +65,7 @@ mod test {
     use InitFromVectors;
 
     #[bench]
-    fn go_straight(b: &mut Bencher) {
+    fn go_forward(b: &mut Bencher) {
         let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         b.iter(|| slice_obj.into_iter().fold(0f32, |acc, x| acc + x.calc()));
     }

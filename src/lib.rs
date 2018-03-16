@@ -64,14 +64,14 @@ mod original {
     }
 
     #[bench]
-    fn go_straight_fold(b: &mut Bencher) {
+    fn go_forward_fold(b: &mut Bencher) {
         let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         let slice_obj = &slice_obj;
         b.iter(|| slice_obj.into_iter().fold(0f32, |acc, x| acc + x.calc()));
     }
 
     #[bench]
-    fn go_straight_for(b: &mut Bencher) {
+    fn go_forward_for(b: &mut Bencher) {
         let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         let slice_obj = &slice_obj;
         b.iter(|| {
