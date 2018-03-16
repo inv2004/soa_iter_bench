@@ -1,7 +1,7 @@
 #![feature(test)]
+extern crate rand;
 #[macro_use]
 extern crate soa_derive;
-extern crate rand;
 extern crate test;
 
 #[cfg(test)]
@@ -48,6 +48,7 @@ macro_rules! from_original {
 
 pub mod straightforward;
 pub mod zipped;
+pub mod zipped_inlined;
 pub mod indexed;
 
 #[cfg(test)]
