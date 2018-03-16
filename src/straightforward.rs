@@ -63,6 +63,18 @@ mod test {
     }
 
     #[bench]
+    fn go_straight_for(b: &mut Bencher) {
+        let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        b.iter(|| {
+            let mut acc = 0f32;
+            for x in slice_obj.into_iter() {
+                acc += x.calc();
+            }
+            acc
+        });
+    }
+
+    #[bench]
     fn go_backwards(b: &mut Bencher) {
         let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         b.iter(|| {
@@ -70,6 +82,18 @@ mod test {
                 .into_iter()
                 .rev()
                 .fold(0f32, |acc, x| acc + x.calc())
+        });
+    }
+
+    #[bench]
+    fn go_backwards_for(b: &mut Bencher) {
+        let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        b.iter(|| {
+            let mut acc = 0f32;
+            for x in slice_obj.into_iter().rev() {
+                acc += x.calc();
+            }
+            acc
         });
     }
 }

@@ -64,14 +64,40 @@ mod original {
     }
 
     #[bench]
-    fn go_straight(b: &mut Bencher) {
+    fn go_straight_fold(b: &mut Bencher) {
         let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         let slice_obj = &slice_obj;
         b.iter(|| slice_obj.into_iter().fold(0f32, |acc, x| acc + x.calc()));
     }
 
     #[bench]
-    fn go_backwards(b: &mut Bencher) {
+    fn go_straight_for(b: &mut Bencher) {
+        let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        let slice_obj = &slice_obj;
+        b.iter(|| {
+            let mut sum = 0f32;
+            for x in slice_obj {
+                sum += x.calc();
+            }
+            sum
+        })
+    }
+
+    #[bench]
+    fn go_backwards_for(b: &mut Bencher) {
+        let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        let slice_obj = &slice_obj;
+        b.iter(|| {
+            let mut sum = 0f32;
+            for x in slice_obj.into_iter().rev() {
+                sum += x.calc();
+            }
+            sum
+        });
+    }
+
+    #[bench]
+    fn go_backwards_fold(b: &mut Bencher) {
         let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         let slice_obj = &slice_obj;
         b.iter(|| {
@@ -83,7 +109,14 @@ mod original {
     }
 
     #[bench]
-    fn straight_izip(b: &mut Bencher) {
+    fn go_backwards_sum(b: &mut Bencher) {
+        let slice_obj = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        let slice_obj = &slice_obj;
+        b.iter(|| slice_obj.into_iter().rev().map(|x| x.calc()).sum::<f32>());
+    }
+
+    #[bench]
+    fn straight_izip_fold(b: &mut Bencher) {
         let slice_object = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         b.iter(|| {
             izip!(
@@ -98,7 +131,24 @@ mod original {
     }
 
     #[bench]
-    fn straight_zip(b: &mut Bencher) {
+    fn straight_izip_for(b: &mut Bencher) {
+        let slice_object = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        b.iter(|| {
+            let mut acc = 0f32;
+            for (a, b, c, d) in izip!(
+                slice_object.a,
+                slice_object.b,
+                slice_object.c,
+                slice_object.d
+            ) {
+                acc += ContainerRef { a, b, c, d }.calc();
+            }
+            acc
+        });
+    }
+
+    #[bench]
+    fn straight_zip_fold(b: &mut Bencher) {
         let slice_object = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
         b.iter(|| {
             slice_object
@@ -110,6 +160,24 @@ mod original {
                 .fold(0f32, |acc, (((a, b), c), d)| {
                     acc + ContainerRef { a, b, c, d }.calc()
                 })
+        });
+    }
+
+    #[bench]
+    fn straight_zip_for(b: &mut Bencher) {
+        let slice_object = ContainerSlice::new(&VEC_A, &VEC_B, &VEC_C, &VEC_D);
+        b.iter(|| {
+            let mut acc = 0f32;
+            for (((a, b), c), d) in slice_object
+                .a
+                .iter()
+                .zip(slice_object.b.iter())
+                .zip(slice_object.c.iter())
+                .zip(slice_object.d.iter())
+            {
+                acc += ContainerRef { a, b, c, d }.calc();
+            }
+            acc
         });
     }
 }
